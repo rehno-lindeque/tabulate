@@ -8,13 +8,13 @@ module Tabulate.DefaultInstances where
 import Tabulate.Types
 import Text.Printf
 
-instance FormatCell EmptyCell String {- TODO: Text -} where
-  formatCell _ = "-"
+instance FormatCell EmptyCell String where
+  formatCell _ = ""
 
--- instance FormatCell EmptyLabel String {- TODO: Text -} where
---   formatCell _ = "-"
+-- instance FormatCell EmptyLabel String where
+--   formatCell _ = ""
 
-instance FormatCell Integer String {- TODO: Text -} where
+instance FormatCell Integer String where
   formatCell x = printf "%d" x
 
 instance FormatCell Int String where
