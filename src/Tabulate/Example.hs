@@ -47,7 +47,7 @@ data Example4 = A4 Int | B4 | C4 Int Int Int deriving Generic
 data Example5 = A5 { ax5 :: Int } | B5 Int | C5 { cx5 :: Int, cy5 :: Int, cz5 :: Int } deriving Generic
 
 instance Tabulate Example1 String
--- instance Tabulate Example2 String
+instance Tabulate Example2 String
 -- instance Tabulate Example3 String
 -- instance Tabulate Example4 String
 -- instance Tabulate Example5 String
@@ -63,9 +63,9 @@ a5 = A5 99
 b5 = B5 99
 c5 = C5 99 88 77
 
--- | Pretty print a comma-separated table of values
-prettyPrintTable :: (Tabulate a String) => [a] -> IO ()
-prettyPrintTable xs =
+-- | Print a comma-Separated table of values
+printTable :: (Tabulate a String) => [a] -> IO ()
+printTable xs =
   let rows = map (intercalate ",") (tabulate xs)
   in mapM_ putStrLn rows
 
