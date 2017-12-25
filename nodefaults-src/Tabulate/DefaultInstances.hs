@@ -1,0 +1,2 @@
+module Tabulate.DefaultInstances where
+

@@ -1,0 +1,40 @@
+name:                tabulate
+version:             0.1.0.0
+synopsis:            Arrange and present data in tabular form
+description:         This package provides an api for arranging (flattening) algebraic data types into a tabular format.
+                     Although tabulate is not a pretty printer per se, it provides an API to rapidly roll your own pretty printer when combined with a package like boxes.
+                     Since tabular output tends to be application-specific the presentation format can be freely picked (and therefore need not be textual at all).
+homepage:            https://github.com/rehno-lindeque/tabulate
+license:             BSD3
+license-file:        LICENSE
+author:              Rehno Lindeque
+maintainer:          Rehno Lindeque <rehno.lindeque+code@gmail.com>
+category:            Data, User Interfaces, Text
+build-type:          Simple
+extra-source-files:  ChangeLog.md
+cabal-version:       >=1.10
+
+flag WithDefaults
+    Description: Adds default String/ShowS cell formatting based on Show (defined in Tabulate.Defaults)
+    Manual: False
+    Default: True
+
+library
+  exposed-modules:     Tabulate
+                     , Tabulate.Internal
+                     , Tabulate.Types
+                     , Tabulate.DefaultInstances
+  other-modules:       Tabulate.Example
+  build-depends:       base >=4.9
+  hs-source-dirs:      src
+  if flag(withdefaults)
+    hs-source-dirs:    defaults-src
+  else
+    hs-source-dirs:    nodefaults-src
+  default-language:    Haskell2010
+  extra-source-files:  defaults-src/Tabulate/DefaultInstances.hs
+                       nodefaults-src/Tabulate/DefaultInstances.hs
+
+source-repository head
+  type:     git
+  location: https://github.com/rehno-lindeque/tabulate
