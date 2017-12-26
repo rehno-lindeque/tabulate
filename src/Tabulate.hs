@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Tabulate 
+module Tabulate
   ( module Tabulate.Types
   , module Tabulate.DefaultInstances
   , tabulate
@@ -15,11 +15,19 @@ import Tabulate.Internal
 import Tabulate.DefaultInstances
 
 import GHC.Generics
-import Data.Proxy (Proxy)
+import Data.Proxy (Proxy(..))
 
 -- | Format a list into a tabular rep (2 dimensional matrix of cells)
 tabulate :: (Tabulate a rep) => [a] -> [[rep]]
 tabulate = map tabulateRow
+
+-- Helper that counts the number of tabulate cells in a datatype
+countCells :: proxy a -> Int
+countCells proxy = _
+
+-- | Helper for generating empty tabulate cells for a data type
+emptyCells :: (FormatCell EmptyCell rep) => proxy a -> [rep]
+emptyCells proxy = map formatCell (take (countCells proxy) (repeat EmptyCell))
 
 -- | Find the constructor name for a given choice (inhabiting some sum type)
 class ConstructorChoice f where
@@ -115,11 +123,12 @@ instance
 instance
   ( GTabulate fa rep
   , GTabulate fb rep
+  , FormatCell EmptyCell rep
   )
   => GTabulate (fa :+: fb) rep
   where
-    gtabulateRow (L1 x) = gtabulateRow x
-    gtabulateRow (R1 x) = gtabulateRow x
+    gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb)
+    gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) ++ gtabulateRow x
 
 -- | Mulitple fields inside a bigger type
 --
@@ -129,10 +138,10 @@ instance
 -- data Foo = ... | Foo fa ... | ...
 -- @
 instance
-  ( GTabulate fa presentation
-  , GTabulate fb presentation
+  ( GTabulate fa rep
+  , GTabulate fb rep
   )
-  => GTabulate (fa :*: fb) presentation
+  => GTabulate (fa :*: fb) rep
   where
     gtabulateRow (x :*: y) = gtabulateRow x ++ gtabulateRow y
 

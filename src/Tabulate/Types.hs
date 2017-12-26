@@ -10,7 +10,7 @@ module Tabulate.Types
   , tabulateRow
   , FormatCell
   , formatCell
-  , EmptyCell
+  , EmptyCell(..)
   )
   where
 
@@ -43,6 +43,5 @@ class FormatCell a rep where
   formatCell x = show x
 
 -- * Formatting helpers
-
 data EmptyCell = EmptyCell
 
