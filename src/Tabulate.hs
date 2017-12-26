@@ -24,16 +24,19 @@ tabulate :: (Tabulate a rep) => [a] -> [[rep]]
 tabulate = map tabulateRow
 
 -- TODO: make this more specialized
-formatLabel :: FormatCell a rep => a -> rep
+formatLabel :: (FormatCell a rep) => a -> rep
 formatLabel = formatCell
 
--- Helper that counts the number of tabulate cells in a datatype
-countCells :: proxy a -> Int
-countCells proxy = _
+-- | Helper that counts the number of tabulate cells in a datatype
+countCells :: (GTabulate f rep) => proxy f -> proxy' rep -> Int
+countCells proxyf (proxyrep :: proxy' rep) =
+  length (gtabulateRowLabels proxyf :: [rep])
 
 -- | Helper for generating empty tabulate cells for a data type
-emptyCells :: (FormatCell EmptyCell rep) => proxy a -> [rep]
-emptyCells proxy = map formatCell (take (countCells proxy) (repeat EmptyCell))
+emptyCells :: (FormatCell EmptyCell rep, GTabulate f rep) => proxy f -> proxy' rep -> [rep]
+emptyCells proxyf proxyrep = map formatCell (take ncells (repeat EmptyCell))
+  where
+    ncells = countCells proxyf proxyrep
 
 -- | Find the constructor name for a given choice (inhabiting some sum type)
 class ConstructorChoice f where
@@ -154,10 +157,10 @@ instance
       if conIsRecord con
       then gtabulateRowLabels (Proxy :: Proxy f)
       else
-        map (formatLabel . (conName con ++) . ("._" ++) . show) (take nfields [1 :: Int ..])
+        map (formatLabel . (conName con ++) . ("._" ++) . show) (take ncells [1 :: Int ..])
       where
         con = (undefined :: t c f p)
-        nfields = countCells (Proxy :: Proxy f)
+        ncells = countCells (Proxy :: Proxy f) (Proxy :: Proxy rep)
 
 -- | Mulitple fields inside a bigger type
 --
@@ -189,6 +192,6 @@ instance
   )
   => GTabulate (fa :+: fb) rep
   where
-    gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb)
-    gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) ++ gtabulateRow x
+    gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb) (Proxy :: Proxy rep)
+    gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) (Proxy :: Proxy rep) ++ gtabulateRow x
     gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy fa) ++ gtabulateRowLabels (Proxy :: Proxy fb)
