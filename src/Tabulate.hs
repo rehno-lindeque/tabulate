@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Tabulate
@@ -15,7 +16,6 @@ module Tabulate
 import Tabulate.Types
 import Tabulate.Internal
 import Tabulate.DefaultInstances
-
 import GHC.Generics
 import Data.Proxy (Proxy(..))
 
@@ -28,15 +28,15 @@ formatLabel :: (FormatCell a rep) => a -> rep
 formatLabel = formatCell
 
 -- | Helper that counts the number of tabulate cells in a datatype
-countCells :: (GTabulate f rep) => proxy f -> proxy' rep -> Int
-countCells proxyf (proxyrep :: proxy' rep) =
+countCells :: forall proxy proxy' f rep. (GTabulate f rep) => proxy f -> proxy' rep -> Int
+countCells proxyf _ =
   length (gtabulateRowLabels proxyf :: [rep])
 
 -- | Helper for generating empty tabulate cells for a data type
-emptyCells :: (FormatCell EmptyCell rep, GTabulate f rep) => proxy f -> proxy' rep -> [rep]
-emptyCells proxyf proxyrep = map formatCell (take ncells (repeat EmptyCell))
+emptyCells :: forall proxy f rep. (FormatCell EmptyCell rep, GTabulate f rep) => proxy f -> [rep]
+emptyCells proxyf = map formatCell (take ncells (repeat EmptyCell))
   where
-    ncells = countCells proxyf proxyrep
+    ncells = countCells proxyf (Proxy :: Proxy rep)
 
 -- | Find the constructor name for a given choice (inhabiting some sum type)
 class ConstructorChoice f where
@@ -215,6 +215,6 @@ instance
   )
   => GTabulate (fa :+: fb) rep
   where
-    gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb) (Proxy :: Proxy rep)
-    gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) (Proxy :: Proxy rep) ++ gtabulateRow x
+    gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb)
+    gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) ++ gtabulateRow x
     gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy fa) ++ gtabulateRowLabels (Proxy :: Proxy fb)
