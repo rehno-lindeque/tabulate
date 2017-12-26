@@ -96,7 +96,7 @@ instance
 -- e.g.
 --
 -- @
--- data Foo = ... | (Bar ...) | ...
+-- data Foo = ... | (Foo ...) | ...
 -- @
 instance
   ( GTabulate f rep
@@ -120,6 +120,21 @@ instance
   where
     gtabulateRow (L1 x) = gtabulateRow x
     gtabulateRow (R1 x) = gtabulateRow x
+
+-- | Mulitple fields inside a bigger type
+--
+-- e.g.
+--
+-- @
+-- data Foo = ... | Foo fa ... | ...
+-- @
+instance
+  ( GTabulate fa presentation
+  , GTabulate fb presentation
+  )
+  => GTabulate (fa :*: fb) presentation
+  where
+    gtabulateRow (x :*: y) = gtabulateRow x ++ gtabulateRow y
 
 -- | A leaf node of the data type (containing a new data type)
 instance

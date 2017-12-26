@@ -49,7 +49,7 @@ data Example5 = A5 { ax5 :: Int } | B5 Int | C5 { cx5 :: Int, cy5 :: Int, cz5 ::
 instance Tabulate Example1 String
 instance Tabulate Example2 String
 instance Tabulate Example3 String
--- instance Tabulate Example4 String
+instance Tabulate Example4 String
 -- instance Tabulate Example5 String
 
 a1 = A1
