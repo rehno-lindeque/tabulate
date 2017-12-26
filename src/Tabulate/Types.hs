@@ -4,10 +4,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Tabulate.Types
   ( Tabulate
   , tabulateRow
+  , tabulateRowLabels
   , FormatCell
   , formatCell
   , EmptyCell(..)
@@ -16,6 +18,7 @@ module Tabulate.Types
 
 import Tabulate.Internal
 import GHC.Generics (Generic, Rep, from)
+import Data.Proxy (Proxy(..))
 
 -- * Type classes
 
@@ -31,6 +34,10 @@ class Tabulate a rep where
   tabulateRow :: a -> [rep]
   default tabulateRow :: (Generic a, GTabulate (Rep a) rep) => a -> [rep]
   tabulateRow x = gtabulateRow (from x)
+
+  tabulateRowLabels :: proxy a -> [rep]
+  default tabulateRowLabels :: (GTabulate (Rep a) rep) => proxy a -> [rep]
+  tabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (Rep a))
 
 -- | Supply formatting for the final representation of each cell
 class FormatCell a rep where

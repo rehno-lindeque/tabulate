@@ -69,6 +69,7 @@ c6 = C6 99 88 77
 -- | Print a comma-Separated table of values
 printTable :: (Tabulate a String) => [a] -> IO ()
 printTable xs =
-  let rows = map (intercalate ",") (tabulate xs)
-  in mapM_ putStrLn rows
+  let headings = intercalate "," (tabulateRowLabels xs)
+      rows = map (intercalate ",") (tabulate xs)
+  in putStrLn headings >> mapM_ putStrLn rows
 
