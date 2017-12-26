@@ -3,6 +3,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Tabulate
   ( module Tabulate.Types
@@ -20,6 +22,10 @@ import Data.Proxy (Proxy(..))
 -- | Format a list into a tabular rep (2 dimensional matrix of cells)
 tabulate :: (Tabulate a rep) => [a] -> [[rep]]
 tabulate = map tabulateRow
+
+-- TODO: make this more specialized
+formatLabel :: FormatCell a rep => a -> rep
+formatLabel = formatCell
 
 -- Helper that counts the number of tabulate cells in a datatype
 countCells :: proxy a -> Int
@@ -46,19 +52,27 @@ instance (ConstructorChoice fa, ConstructorChoice fb) => ConstructorChoice (fa :
 -- data Foo = Foo
 -- @
 instance
-  ( Constructor c
+  ( Datatype d
+  , Constructor c
   , FormatCell String rep
   )
   => GTabulate (D1 d (C1 c U1)) rep where
   gtabulateRow (M1 x) = [formatCell (conName x)]
+  gtabulateRowLabels _ = [formatLabel (datatypeName dat)]
+    where
+      dat = (undefined :: t d f a)
 
 -- | Tabulate a single unary data constructor
 instance
   ( GTabulate f rep
+  , Selector s
+  , Constructor c
+  , FormatCell String rep
   )
   => GTabulate (D1 d (C1 c (S1 s f))) rep
   where
     gtabulateRow = gtabulateRow . unM1 . unM1
+    gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (C1 c (S1 s f)))
 
 -- | Tabulate a sum data type
 --
@@ -71,18 +85,26 @@ instance
   ( GTabulate (fa :+: fb) rep
   , ConstructorChoice (fa :+: fb)
   , FormatCell String rep
+  , Datatype d
+  -- , ConstructorChoice (fa :+: fb)
+  -- , FormatCell String rep
   )
   => GTabulate (D1 d (fa :+: fb)) rep
   where
     gtabulateRow (M1 x) = [formatCell (choiceConName x)] ++ gtabulateRow x
+    gtabulateRowLabels _ = [formatLabel (datatypeName dat)] ++ gtabulateRowLabels (Proxy :: Proxy (fa :+: fb))
+      where
+        dat = (undefined :: t d f a)
 
 -- | A leaf node of the data type (containing a new data type)
 instance
-  (FormatCell a rep
+  ( FormatCell a rep
+  , FormatCell String rep
   )
   => GTabulate (K1 i a) rep
   where
     gtabulateRow (K1 x) = [formatCell x]
+    gtabulateRowLabels _ = [formatLabel ""]
 
 -- | A nullary data constructor inside of a larger type
 --
@@ -93,6 +115,7 @@ instance
 -- @
 instance GTabulate U1 rep where
   gtabulateRow _ = []
+  gtabulateRowLabels _ = []
 
 -- | A unary data constructor (wrapping a single value) inside of a larger type
 --
@@ -102,10 +125,15 @@ instance GTabulate U1 rep where
 --
 instance
   ( GTabulate f rep
+  , Selector s
+  , FormatCell String rep
   )
   => GTabulate (S1 s f) rep
   where
     gtabulateRow = gtabulateRow . unM1
+    gtabulateRowLabels _ = [formatLabel (selName sel)]
+      where
+        sel = (undefined :: t s f a)
 
 -- | A constructor inside of a larger type
 --
@@ -116,10 +144,20 @@ instance
 -- @
 instance
   ( GTabulate f rep
+  , Constructor c
+  , FormatCell String rep
   )
   => GTabulate (C1 c f) rep
   where
     gtabulateRow = gtabulateRow . unM1
+    gtabulateRowLabels _ =
+      if conIsRecord con
+      then gtabulateRowLabels (Proxy :: Proxy f)
+      else
+        map (formatLabel . (conName con ++) . ("._" ++) . show) (take nfields [1 :: Int ..])
+      where
+        con = (undefined :: t c f p)
+        nfields = countCells (Proxy :: Proxy f)
 
 -- | Mulitple fields inside a bigger type
 --
@@ -135,6 +173,7 @@ instance
   => GTabulate (fa :*: fb) rep
   where
     gtabulateRow (x :*: y) = gtabulateRow x ++ gtabulateRow y
+    gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy fa) ++ gtabulateRowLabels (Proxy :: Proxy fb)
 
 -- | A partial sum type within a larger sum type
 --
@@ -152,3 +191,4 @@ instance
   where
     gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb)
     gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) ++ gtabulateRow x
+    gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy fa) ++ gtabulateRowLabels (Proxy :: Proxy fb)
