@@ -9,25 +9,22 @@ import Tabulate.Types
 import Text.Printf
 
 instance FormatCell EmptyCell String where
-  formatCell _ = ""
-
--- instance FormatCell EmptyLabel String where
---   formatCell _ = ""
+  formatCell _ = [""]
 
 instance FormatCell Integer String where
-  formatCell x = printf "%d" x
+  formatCell x = [printf "%d" x]
 
 instance FormatCell Int String where
-  formatCell x = printf "%d" x
+  formatCell x = [printf "%d" x]
 
 instance FormatCell Float String where
-  formatCell x = printf "%14.9g" x
+  formatCell x = [printf "%14.9g" x]
 
 instance FormatCell String String where
-  formatCell x = printf "%s" x
+  formatCell x = [printf "%s" x]
 
 instance FormatCell Double String where
-  formatCell x = printf "%14.9g" x
+  formatCell x = [printf "%14.9g" x]
 
 instance FormatCell Bool String
 

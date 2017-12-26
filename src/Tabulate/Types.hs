@@ -43,11 +43,11 @@ class Tabulate a rep where
 class FormatCell a rep where
 
   -- | Convert from an arbitrary type to the table representation of a cell
-  formatCell :: a -> rep
+  formatCell :: a -> [rep]
 
   -- Our default instance uses show
-  default formatCell :: (Show a, rep ~ String) => a -> rep
-  formatCell x = show x
+  default formatCell :: (Show a, rep ~ String) => a -> [rep]
+  formatCell x = [show x]
 
 -- * Formatting helpers
 data EmptyCell = EmptyCell

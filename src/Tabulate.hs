@@ -24,7 +24,7 @@ tabulate :: (Tabulate a rep) => [a] -> [[rep]]
 tabulate = map tabulateRow
 
 -- TODO: make this more specialized
-formatLabel :: (FormatCell a rep) => a -> rep
+formatLabel :: (FormatCell a rep) => a -> [rep]
 formatLabel = formatCell
 
 -- | Helper that counts the number of tabulate cells in a datatype
@@ -34,7 +34,7 @@ countCells proxyf _ =
 
 -- | Helper for generating empty tabulate cells for a data type
 emptyCells :: forall proxy f rep. (FormatCell EmptyCell rep, GTabulate f rep) => proxy f -> [rep]
-emptyCells proxyf = map formatCell (take ncells (repeat EmptyCell))
+emptyCells proxyf = concatMap formatCell (take ncells (repeat EmptyCell))
   where
     ncells = countCells proxyf (Proxy :: Proxy rep)
 
@@ -60,8 +60,8 @@ instance
   , FormatCell String rep
   )
   => GTabulate (D1 d (C1 c U1)) rep where
-  gtabulateRow (M1 x) = [formatCell (conName x)]
-  gtabulateRowLabels _ = [formatLabel (datatypeName dat)]
+  gtabulateRow (M1 x) = formatCell (conName x)
+  gtabulateRowLabels _ = formatLabel (datatypeName dat)
     where
       dat = (undefined :: t d f a)
 
@@ -117,8 +117,8 @@ instance
   )
   => GTabulate (D1 d (fa :+: fb)) rep
   where
-    gtabulateRow (M1 x) = [formatCell (choiceConName x)] ++ gtabulateRow x
-    gtabulateRowLabels _ = [formatLabel (datatypeName dat)] ++ gtabulateRowLabels (Proxy :: Proxy (fa :+: fb))
+    gtabulateRow (M1 x) = formatCell (choiceConName x) ++ gtabulateRow x
+    gtabulateRowLabels _ = formatLabel (datatypeName dat) ++ gtabulateRowLabels (Proxy :: Proxy (fa :+: fb))
       where
         dat = (undefined :: t d f a)
 
@@ -129,8 +129,8 @@ instance
   )
   => GTabulate (K1 i a) rep
   where
-    gtabulateRow (K1 x) = [formatCell x]
-    gtabulateRowLabels _ = [formatLabel ""]
+    gtabulateRow (K1 x) = formatCell x
+    gtabulateRowLabels _ = formatLabel ""
 
 -- | A nullary data constructor inside of a larger type
 --
@@ -157,7 +157,7 @@ instance
   => GTabulate (S1 s f) rep
   where
     gtabulateRow = gtabulateRow . unM1
-    gtabulateRowLabels _ = [formatLabel (selName sel)]
+    gtabulateRowLabels _ = formatLabel (selName sel)
       where
         sel = (undefined :: t s f a)
 
@@ -180,7 +180,7 @@ instance
       if conIsRecord con
       then gtabulateRowLabels (Proxy :: Proxy f)
       else
-        map (formatLabel . (conName con ++) . ("._" ++) . show) (take ncells [1 :: Int ..])
+        concatMap (formatLabel . (conName con ++) . ("._" ++) . show) (take ncells [1 :: Int ..])
       where
         con = (undefined :: t c f p)
         ncells = countCells (Proxy :: Proxy f) (Proxy :: Proxy rep)
