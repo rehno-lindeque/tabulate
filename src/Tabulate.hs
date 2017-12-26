@@ -76,6 +76,14 @@ instance
   where
     gtabulateRow (M1 x) = [formatCell (choiceConName x)] ++ gtabulateRow x
 
+-- | A leaf node of the data type (containing a new data type)
+instance
+  (FormatCell a rep
+  )
+  => GTabulate (K1 i a) rep
+  where
+    gtabulateRow (K1 x) = [formatCell x]
+
 -- | A nullary data constructor inside of a larger type
 --
 -- e.g.
@@ -113,6 +121,21 @@ instance
   where
     gtabulateRow = gtabulateRow . unM1
 
+-- | Mulitple fields inside a bigger type
+--
+-- e.g.
+--
+-- @
+-- data Foo = ... | Foo fa ... | ...
+-- @
+instance
+  ( GTabulate fa rep
+  , GTabulate fb rep
+  )
+  => GTabulate (fa :*: fb) rep
+  where
+    gtabulateRow (x :*: y) = gtabulateRow x ++ gtabulateRow y
+
 -- | A partial sum type within a larger sum type
 --
 -- e.g.
@@ -129,27 +152,3 @@ instance
   where
     gtabulateRow (L1 x) = gtabulateRow x ++ emptyCells (Proxy :: Proxy fb)
     gtabulateRow (R1 x) = emptyCells (Proxy :: Proxy fa) ++ gtabulateRow x
-
--- | Mulitple fields inside a bigger type
---
--- e.g.
---
--- @
--- data Foo = ... | Foo fa ... | ...
--- @
-instance
-  ( GTabulate fa rep
-  , GTabulate fb rep
-  )
-  => GTabulate (fa :*: fb) rep
-  where
-    gtabulateRow (x :*: y) = gtabulateRow x ++ gtabulateRow y
-
--- | A leaf node of the data type (containing a new data type)
-instance
-  (FormatCell a rep
-  )
-  => GTabulate (K1 i a) rep
-  where
-    gtabulateRow (K1 x) = [formatCell x]
-
