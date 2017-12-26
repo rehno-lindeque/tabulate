@@ -44,6 +44,14 @@ instance
   => GTabulate (D1 d (C1 c U1)) rep where
   gtabulateRow (M1 x) = [formatCell (conName x)]
 
+-- | Tabulate a single unary data constructor
+instance
+  ( GTabulate f rep
+  )
+  => GTabulate (D1 d (C1 c (S1 s f))) rep
+  where
+    gtabulateRow = gtabulateRow . unM1 . unM1
+
 -- | Tabulate a sum data type
 --
 -- e.g.
@@ -60,7 +68,7 @@ instance
   where
     gtabulateRow (M1 x) = [formatCell (choiceConName x)] ++ gtabulateRow x
 
--- | A nullary data constructor inside a sum type
+-- | A nullary data constructor inside of a larger type
 --
 -- e.g.
 --
@@ -70,7 +78,20 @@ instance
 instance GTabulate U1 rep where
   gtabulateRow _ = []
 
--- | A constructor inside a sum type
+-- | A unary data constructor (wrapping a single value) inside of a larger type
+--
+-- e.g.
+--
+-- >>> data Foo = ... | Foo f | ...
+--
+instance
+  ( GTabulate f rep
+  )
+  => GTabulate (S1 s f) rep
+  where
+    gtabulateRow = gtabulateRow . unM1
+
+-- | A constructor inside of a larger type
 --
 -- e.g.
 --
@@ -84,7 +105,7 @@ instance
   where
     gtabulateRow = gtabulateRow . unM1
 
--- | A partial sum type within a sum type
+-- | A partial sum type within a larger sum type
 --
 -- e.g.
 --
@@ -99,4 +120,12 @@ instance
   where
     gtabulateRow (L1 x) = gtabulateRow x
     gtabulateRow (R1 x) = gtabulateRow x
+
+-- | A leaf node of the data type (containing a new data type)
+instance
+  (FormatCell a rep
+  )
+  => GTabulate (K1 i a) rep
+  where
+    gtabulateRow (K1 x) = [formatCell x]
 
