@@ -25,7 +25,7 @@ tabulate = map tabulateRow
 
 -- | Helper for generating a cell
 formatCell :: (Tabulate a rep) => a -> [rep]
-formatCell = tabulateRow
+formatCell = tabulateInlineRow
 
 -- | Helper for generating a label cell
 formatLabel :: (Tabulate String rep) => String -> [rep]
@@ -132,7 +132,7 @@ instance
   => GTabulate (K1 i a) rep
   where
     gtabulateRow (K1 x) = formatCell x
-    gtabulateRowLabels _ = tabulateRowLabels (Proxy :: Proxy a)
+    gtabulateRowLabels _ = tabulateInlineRowLabels (Proxy :: Proxy a)
 
 -- | A nullary data constructor inside of a larger type
 --

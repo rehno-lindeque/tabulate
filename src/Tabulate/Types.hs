@@ -10,6 +10,8 @@ module Tabulate.Types
   ( Tabulate
   , tabulateRow
   , tabulateRowLabels
+  , tabulateInlineRow
+  , tabulateInlineRowLabels
   , EmptyCell(..)
   )
   where
@@ -37,6 +39,14 @@ class Tabulate a rep where
   tabulateRowLabels :: proxy a -> [rep]
   default tabulateRowLabels :: (GTabulate (Rep a) rep) => proxy a -> [rep]
   tabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (Rep a))
+
+  -- | Format a value into cells forming part of a larger row
+  tabulateInlineRow :: a -> [rep]
+  tabulateInlineRow = tabulateRow
+
+  -- | Format a value into a single row of labels forming part of a larger row of labels
+  tabulateInlineRowLabels :: proxy a -> [rep]
+  tabulateInlineRowLabels = tabulateRowLabels
 
 -- * Formatting helpers
 data EmptyCell = EmptyCell
