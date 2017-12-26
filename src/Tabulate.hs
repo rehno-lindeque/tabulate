@@ -132,7 +132,7 @@ instance
   => GTabulate (K1 i a) rep
   where
     gtabulateRow (K1 x) = formatCell x
-    gtabulateRowLabels _ = formatLabel ""
+    gtabulateRowLabels _ = tabulateRowLabels (Proxy :: Proxy a)
 
 -- | A nullary data constructor inside of a larger type
 --
@@ -159,7 +159,10 @@ instance
   => GTabulate (S1 s f) rep
   where
     gtabulateRow = gtabulateRow . unM1
-    gtabulateRowLabels _ = formatLabel (selName sel)
+    gtabulateRowLabels _ =
+      case selName sel of
+        "" -> gtabulateRowLabels (Proxy :: Proxy f)
+        fieldName -> formatLabel fieldName
       where
         sel = (undefined :: t s f a)
 
@@ -179,13 +182,17 @@ instance
   where
     gtabulateRow = gtabulateRow . unM1
     gtabulateRowLabels _ =
-      if conIsRecord con
-      then gtabulateRowLabels (Proxy :: Proxy f)
-      else
-        concatMap (formatLabel . (conName con ++) . ("._" ++) . show) (take ncells [1 :: Int ..])
-      where
-        con = (undefined :: t c f p)
-        ncells = countCells (Proxy :: Proxy f) (Proxy :: Proxy rep)
+      gtabulateRowLabels (Proxy :: Proxy f)
+      -- if conIsRecord con
+      -- then gtabulateRowLabels (Proxy :: Proxy f)
+      -- else
+      --   -- concatMap (formatLabel . (conName con ++) . ("._" ++) . show) (take ncells [1 :: Int ..])
+      --   if ncells == 1
+      --   then formatLabel (conName con)
+      --   else gtabulateRowLabels (Proxy :: Proxy f)
+      -- where
+      --   con = (undefined :: t c f p)
+      --   ncells = countCells (Proxy :: Proxy f) (Proxy :: Proxy rep)
 
 -- | Mulitple fields inside a bigger type
 --

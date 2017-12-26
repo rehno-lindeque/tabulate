@@ -33,6 +33,7 @@ class Tabulate a rep where
   default tabulateRow :: (Generic a, GTabulate (Rep a) rep) => a -> [rep]
   tabulateRow x = gtabulateRow (from x)
 
+  -- | Format a value into a single row of labels
   tabulateRowLabels :: proxy a -> [rep]
   default tabulateRowLabels :: (GTabulate (Rep a) rep) => proxy a -> [rep]
   tabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (Rep a))
