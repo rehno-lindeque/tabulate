@@ -66,6 +66,12 @@ instance
       dat = (undefined :: t d f a)
 
 -- | Tabulate a single unary data constructor
+--
+-- e.g.
+--
+-- @
+-- data Foo = Foo fa
+-- @
 instance
   ( GTabulate f rep
   , Selector s
@@ -76,6 +82,23 @@ instance
   where
     gtabulateRow = gtabulateRow . unM1 . unM1
     gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (C1 c (S1 s f)))
+
+-- | Tabulate a single data constructor with multiple fields
+--
+-- e.g.
+--
+-- @
+-- data Foo = Foo fa ...
+-- @
+instance
+  ( GTabulate (fa :*: fb) rep
+  , Constructor c
+  , FormatCell String rep
+  )
+  => GTabulate (D1 d (C1 c (fa :*: fb))) rep
+  where
+    gtabulateRow = gtabulateRow . unM1 . unM1
+    gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (C1 c (fa :*: fb)))
 
 -- | Tabulate a sum data type
 --
