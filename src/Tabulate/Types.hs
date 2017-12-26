@@ -10,8 +10,6 @@ module Tabulate.Types
   ( Tabulate
   , tabulateRow
   , tabulateRowLabels
-  , FormatCell
-  , formatCell
   , EmptyCell(..)
   )
   where
@@ -38,16 +36,6 @@ class Tabulate a rep where
   tabulateRowLabels :: proxy a -> [rep]
   default tabulateRowLabels :: (GTabulate (Rep a) rep) => proxy a -> [rep]
   tabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (Rep a))
-
--- | Supply formatting for the final representation of each cell
-class FormatCell a rep where
-
-  -- | Convert from an arbitrary type to the table representation of a cell
-  formatCell :: a -> [rep]
-
-  -- Our default instance uses show
-  default formatCell :: (Show a, rep ~ String) => a -> [rep]
-  formatCell x = [show x]
 
 -- * Formatting helpers
 data EmptyCell = EmptyCell

@@ -23,8 +23,12 @@ import Data.Proxy (Proxy(..))
 tabulate :: (Tabulate a rep) => [a] -> [[rep]]
 tabulate = map tabulateRow
 
--- TODO: make this more specialized
-formatLabel :: (FormatCell a rep) => a -> [rep]
+-- | Helper for generating a cell
+formatCell :: (Tabulate a rep) => a -> [rep]
+formatCell = tabulateRow
+
+-- | Helper for generating a label cell
+formatLabel :: (Tabulate String rep) => String -> [rep]
 formatLabel = formatCell
 
 -- | Helper that counts the number of tabulate cells in a datatype
@@ -33,7 +37,7 @@ countCells proxyf _ =
   length (gtabulateRowLabels proxyf :: [rep])
 
 -- | Helper for generating empty tabulate cells for a data type
-emptyCells :: forall proxy f rep. (FormatCell EmptyCell rep, GTabulate f rep) => proxy f -> [rep]
+emptyCells :: forall proxy f rep. (Tabulate EmptyCell rep, GTabulate f rep) => proxy f -> [rep]
 emptyCells proxyf = concatMap formatCell (take ncells (repeat EmptyCell))
   where
     ncells = countCells proxyf (Proxy :: Proxy rep)
@@ -57,7 +61,7 @@ instance (ConstructorChoice fa, ConstructorChoice fb) => ConstructorChoice (fa :
 instance
   ( Datatype d
   , Constructor c
-  , FormatCell String rep
+  , Tabulate String rep
   )
   => GTabulate (D1 d (C1 c U1)) rep where
   gtabulateRow (M1 x) = formatCell (conName x)
@@ -76,7 +80,7 @@ instance
   ( GTabulate f rep
   , Selector s
   , Constructor c
-  , FormatCell String rep
+  , Tabulate String rep
   )
   => GTabulate (D1 d (C1 c (S1 s f))) rep
   where
@@ -93,7 +97,7 @@ instance
 instance
   ( GTabulate (fa :*: fb) rep
   , Constructor c
-  , FormatCell String rep
+  , Tabulate String rep
   )
   => GTabulate (D1 d (C1 c (fa :*: fb))) rep
   where
@@ -110,10 +114,8 @@ instance
 instance
   ( GTabulate (fa :+: fb) rep
   , ConstructorChoice (fa :+: fb)
-  , FormatCell String rep
+  , Tabulate String rep
   , Datatype d
-  -- , ConstructorChoice (fa :+: fb)
-  -- , FormatCell String rep
   )
   => GTabulate (D1 d (fa :+: fb)) rep
   where
@@ -124,8 +126,8 @@ instance
 
 -- | A leaf node of the data type (containing a new data type)
 instance
-  ( FormatCell a rep
-  , FormatCell String rep
+  ( Tabulate a rep
+  , Tabulate String rep
   )
   => GTabulate (K1 i a) rep
   where
@@ -152,7 +154,7 @@ instance GTabulate U1 rep where
 instance
   ( GTabulate f rep
   , Selector s
-  , FormatCell String rep
+  , Tabulate String rep
   )
   => GTabulate (S1 s f) rep
   where
@@ -171,7 +173,7 @@ instance
 instance
   ( GTabulate f rep
   , Constructor c
-  , FormatCell String rep
+  , Tabulate String rep
   )
   => GTabulate (C1 c f) rep
   where
@@ -211,7 +213,7 @@ instance
 instance
   ( GTabulate fa rep
   , GTabulate fb rep
-  , FormatCell EmptyCell rep
+  , Tabulate EmptyCell rep
   )
   => GTabulate (fa :+: fb) rep
   where

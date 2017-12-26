@@ -8,24 +8,31 @@ module Tabulate.DefaultInstances where
 import Tabulate.Types
 import Text.Printf
 
-instance FormatCell EmptyCell String where
-  formatCell _ = [""]
+instance Tabulate EmptyCell String where
+  tabulateRow _ = [""]
+  tabulateRowLabels _ = ["EmptyCell"]
 
-instance FormatCell Integer String where
-  formatCell x = [printf "%d" x]
+instance Tabulate Integer String where
+  tabulateRow x = [printf "%d" x]
+  tabulateRowLabels _ = ["Integer"]
 
-instance FormatCell Int String where
-  formatCell x = [printf "%d" x]
+instance Tabulate Int String where
+  tabulateRow x = [printf "%d" x]
+  tabulateRowLabels _ = ["Int"]
 
-instance FormatCell Float String where
-  formatCell x = [printf "%14.9g" x]
+instance Tabulate Float String where
+  tabulateRow x = [printf "%14.9g" x]
+  tabulateRowLabels _ = ["Float"]
 
-instance FormatCell String String where
-  formatCell x = [printf "%s" x]
+instance Tabulate String String where
+  tabulateRow x = [printf "%s" x]
+  tabulateRowLabels _ = ["String"]
 
-instance FormatCell Double String where
-  formatCell x = [printf "%14.9g" x]
+instance Tabulate Double String where
+  tabulateRow x = [printf "%14.9g" x]
+  tabulateRowLabels _ = ["Double"]
 
-instance FormatCell Bool String
-
+instance Tabulate Bool String where
+  tabulateRow x = [show x]
+  tabulateRowLabels _ = ["Bool"]
 
