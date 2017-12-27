@@ -27,13 +27,9 @@ tabulate = map tabulateRow
 
 -- * Helpers
 
--- | Helper for generating a cell
-formatCell :: (Tabulate a rep) => a -> [rep]
-formatCell = tabulateInlineRow
-
--- | Helper for generating a label cell
-formatLabel :: forall proxy (meta :: Meta) rep. (Tabulate (proxy meta) rep) => proxy meta -> [rep]
-formatLabel = formatCell
+-- | Helper for generating a single empty cell
+formatEmpty :: (Tabulate a rep) => a -> [rep]
+formatEmpty = tabulateInlineRow
 
 -- | Helper that counts the number of tabulate cells in a datatype
 countCells :: forall proxy proxy' f rep. (GTabulate f rep) => proxy f -> proxy' rep -> Int
@@ -42,7 +38,7 @@ countCells proxyf _ =
 
 -- | Helper for generating empty tabulate cells for a data type
 emptyCells :: forall proxy f rep. (Tabulate EmptyCell rep, GTabulate f rep) => proxy f -> [rep]
-emptyCells proxyf = concatMap formatCell (take ncells (repeat EmptyCell))
+emptyCells proxyf = concatMap formatEmpty (take ncells (repeat EmptyCell))
   where
     ncells = countCells proxyf (Proxy :: Proxy rep)
 
