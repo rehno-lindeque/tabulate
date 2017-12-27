@@ -125,11 +125,10 @@ instance
 -- | A leaf node of the data type (containing a new data type)
 instance
   ( Tabulate a rep
-  , Tabulate String rep
   )
   => GTabulate (K1 i a) rep
   where
-    gtabulateRow (K1 x) = formatCell x
+    gtabulateRow (K1 x) = tabulateInlineRow x
     gtabulateRowLabels _ = tabulateInlineRowLabels (Proxy :: Proxy a)
 
 -- | A nullary data constructor inside of a larger type
