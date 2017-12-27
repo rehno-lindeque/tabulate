@@ -47,6 +47,7 @@ data Example4 = A4 Int Int deriving Generic
 data Example5 = A5 Int | B5 | C5 Int Int Int deriving Generic
 data Example6 = A6 { ax6 :: Int } | B6 Int | C6 { cx6 :: Int, cy6 :: Int, cz6 :: Int } deriving Generic
 data Example7 = A7 Example7 Example7 | B7 Int deriving (Generic, Show)
+type Example8 = (Int,Int,(Int, (), Int))
 
 instance Tabulate Example1 String
 instance Tabulate Example2 String
@@ -71,6 +72,7 @@ b6 = B6 99
 c6 = C6 99 88 77
 a7 = A7 (A7 (B7 99) (B7 88)) (B7 77)
 b7 = B7 99
+ex8 = (99,88,(77,(),66)) :: Example8
 
 -- | Print a comma-Separated table of values
 printTable :: (Tabulate a String) => [a] -> IO ()

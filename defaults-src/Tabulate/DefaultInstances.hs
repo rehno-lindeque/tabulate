@@ -36,3 +36,6 @@ instance Tabulate Bool String where
   tabulateRow x = [show x]
   tabulateRowLabels _ = ["Bool"]
 
+instance Tabulate () String where
+  tabulateRow x = [show x]
+  tabulateRowLabels _ = ["()"]

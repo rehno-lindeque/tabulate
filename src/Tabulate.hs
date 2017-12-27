@@ -42,7 +42,7 @@ emptyCells proxyf = concatMap formatEmpty (take ncells (repeat EmptyCell))
   where
     ncells = countCells proxyf (Proxy :: Proxy rep)
 
--- * Formatting instances
+-- Formatting instances
 
 instance (FormatMeta c rep) => FormatConstructor (C1 c f) rep where
   formatConstructor _ = formatMeta (Proxy :: Proxy c)
@@ -57,7 +57,16 @@ instance (KnownSymbol n) => FormatMeta (MetaCons n f r) String where
 instance (KnownSymbol n) => FormatMeta (MetaSel (Just n) su ss ds) String where
   formatMeta _ = symbolVal (Proxy :: Proxy n)
 
--- * Generic instances
+-- Tuple instances
+
+instance (Tabulate a rep, Tabulate b rep) => Tabulate (a,b) rep
+instance (Tabulate a rep, Tabulate b rep, Tabulate c rep) => Tabulate (a,b,c) rep
+instance (Tabulate a rep, Tabulate b rep, Tabulate c rep, Tabulate d rep) => Tabulate (a,b,c,d) rep
+instance (Tabulate a rep, Tabulate b rep, Tabulate c rep, Tabulate d rep, Tabulate e rep) => Tabulate (a,b,c,d,e) rep
+instance (Tabulate a rep, Tabulate b rep, Tabulate c rep, Tabulate d rep, Tabulate e rep, Tabulate f rep) => Tabulate (a,b,c,d,e,f) rep
+instance (Tabulate a rep, Tabulate b rep, Tabulate c rep, Tabulate d rep, Tabulate e rep, Tabulate f rep, Tabulate g rep) => Tabulate (a,b,c,d,e,f,g) rep
+
+-- Generic instances
 
 -- | Tabulate a single nullary data constructor
 --
