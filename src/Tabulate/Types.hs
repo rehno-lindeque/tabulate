@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
 
 module Tabulate.Types
   ( Tabulate
@@ -12,12 +13,15 @@ module Tabulate.Types
   , tabulateRowLabels
   , tabulateInlineRow
   , tabulateInlineRowLabels
+  , FormatMeta
+  , formatMeta
   , EmptyCell(..)
   )
   where
 
 import Tabulate.Internal
-import GHC.Generics (Generic, Rep, from)
+import GHC.Generics (Generic)
+import qualified GHC.Generics as Generics (Rep, Meta, from)
 import Data.Proxy (Proxy(..))
 
 -- * Type classes
@@ -32,13 +36,13 @@ import Data.Proxy (Proxy(..))
 class Tabulate a rep where
   -- | Format a value into a single row of cells
   tabulateRow :: a -> [rep]
-  default tabulateRow :: (Generic a, GTabulate (Rep a) rep) => a -> [rep]
-  tabulateRow x = gtabulateRow (from x)
+  default tabulateRow :: (Generic a, GTabulate (Generics.Rep a) rep) => a -> [rep]
+  tabulateRow x = gtabulateRow (Generics.from x)
 
   -- | Format a value into a single row of labels
   tabulateRowLabels :: proxy a -> [rep]
-  default tabulateRowLabels :: (GTabulate (Rep a) rep) => proxy a -> [rep]
-  tabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (Rep a))
+  default tabulateRowLabels :: (GTabulate (Generics.Rep a) rep) => proxy a -> [rep]
+  tabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy (Generics.Rep a))
 
   -- | Format a value into cells forming part of a larger row
   tabulateInlineRow :: a -> [rep]
@@ -49,5 +53,10 @@ class Tabulate a rep where
   tabulateInlineRowLabels = tabulateRowLabels
 
 -- * Formatting helpers
+
+-- | Format metadata such as data type names, constructor names and selector names
+class FormatMeta (meta :: Generics.Meta) rep where
+  formatMeta :: proxy meta -> rep
+
 data EmptyCell = EmptyCell
 

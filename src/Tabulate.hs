@@ -6,6 +6,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
 
 module Tabulate
   ( module Tabulate.Types
@@ -17,18 +18,21 @@ import Tabulate.Types
 import Tabulate.Internal
 import Tabulate.DefaultInstances
 import GHC.Generics
+import GHC.TypeLits (KnownSymbol, symbolVal)
 import Data.Proxy (Proxy(..))
 
 -- | Format a list into a tabular rep (2 dimensional matrix of cells)
 tabulate :: (Tabulate a rep) => [a] -> [[rep]]
 tabulate = map tabulateRow
 
+-- * Helpers
+
 -- | Helper for generating a cell
 formatCell :: (Tabulate a rep) => a -> [rep]
 formatCell = tabulateInlineRow
 
 -- | Helper for generating a label cell
-formatLabel :: (Tabulate String rep) => String -> [rep]
+formatLabel :: forall proxy (meta :: Meta) rep. (Tabulate (proxy meta) rep) => proxy meta -> [rep]
 formatLabel = formatCell
 
 -- | Helper that counts the number of tabulate cells in a datatype
@@ -42,14 +46,22 @@ emptyCells proxyf = concatMap formatCell (take ncells (repeat EmptyCell))
   where
     ncells = countCells proxyf (Proxy :: Proxy rep)
 
--- | Find the constructor name for a given choice (inhabiting some sum type)
-class ConstructorChoice f where
-  choiceConName :: f a -> String
-instance Constructor c => ConstructorChoice (C1 c f) where
-  choiceConName = conName
-instance (ConstructorChoice fa, ConstructorChoice fb) => ConstructorChoice (fa :+: fb) where
-  choiceConName (L1 x) = choiceConName x
-  choiceConName (R1 x) = choiceConName x
+-- * Formatting instances
+
+instance (FormatMeta c rep) => FormatConstructor (C1 c f) rep where
+  formatConstructor _ = formatMeta (Proxy :: Proxy c)
+instance (FormatConstructor fa rep, FormatConstructor fb rep) => FormatConstructor (fa :+: fb) rep where
+  formatConstructor (L1 x) = formatConstructor x
+  formatConstructor (R1 x) = formatConstructor x
+
+instance (KnownSymbol n) => FormatMeta (MetaData n m p nt) String where
+  formatMeta _ = symbolVal (Proxy :: Proxy n)
+instance (KnownSymbol n) => FormatMeta (MetaCons n f r) String where
+  formatMeta _ = symbolVal (Proxy :: Proxy n)
+instance (KnownSymbol n) => FormatMeta (MetaSel (Just n) su ss ds) String where
+  formatMeta _ = symbolVal (Proxy :: Proxy n)
+
+-- * Generic instances
 
 -- | Tabulate a single nullary data constructor
 --
@@ -59,15 +71,12 @@ instance (ConstructorChoice fa, ConstructorChoice fb) => ConstructorChoice (fa :
 -- data Foo = Foo
 -- @
 instance
-  ( Datatype d
-  , Constructor c
-  , Tabulate String rep
+  ( FormatMeta c rep
+  , FormatMeta d rep
   )
   => GTabulate (D1 d (C1 c U1)) rep where
-  gtabulateRow (M1 x) = formatCell (conName x)
-  gtabulateRowLabels _ = formatLabel (datatypeName dat)
-    where
-      dat = (undefined :: t d f a)
+  gtabulateRow (M1 x) = [formatMeta (Proxy :: Proxy c)]
+  gtabulateRowLabels _ = [formatMeta (Proxy :: Proxy d)]
 
 -- | Tabulate a single unary data constructor
 --
@@ -78,9 +87,7 @@ instance
 -- @
 instance
   ( GTabulate f rep
-  , Selector s
-  , Constructor c
-  , Tabulate String rep
+  , GTabulate (S1 s f) rep
   )
   => GTabulate (D1 d (C1 c (S1 s f))) rep
   where
@@ -96,8 +103,6 @@ instance
 -- @
 instance
   ( GTabulate (fa :*: fb) rep
-  , Constructor c
-  , Tabulate String rep
   )
   => GTabulate (D1 d (C1 c (fa :*: fb))) rep
   where
@@ -113,16 +118,13 @@ instance
 -- @
 instance
   ( GTabulate (fa :+: fb) rep
-  , ConstructorChoice (fa :+: fb)
-  , Tabulate String rep
-  , Datatype d
+  , FormatConstructor (fa :+: fb) rep
+  , FormatMeta d rep
   )
   => GTabulate (D1 d (fa :+: fb)) rep
   where
-    gtabulateRow (M1 x) = formatCell (choiceConName x) ++ gtabulateRow x
-    gtabulateRowLabels _ = formatLabel (datatypeName dat) ++ gtabulateRowLabels (Proxy :: Proxy (fa :+: fb))
-      where
-        dat = (undefined :: t d f a)
+    gtabulateRow (M1 x) = formatConstructor x : gtabulateRow x
+    gtabulateRowLabels _ = formatMeta (Proxy :: Proxy d) : gtabulateRowLabels (Proxy :: Proxy (fa :+: fb))
 
 -- | A leaf node of the data type (containing a new data type)
 instance
@@ -153,18 +155,20 @@ instance GTabulate U1 rep where
 --
 instance
   ( GTabulate f rep
-  , Selector s
-  , Tabulate String rep
   )
-  => GTabulate (S1 s f) rep
+  => GTabulate (S1 (MetaSel Nothing su ss ds) f) rep
   where
     gtabulateRow = gtabulateRow . unM1
-    gtabulateRowLabels _ =
-      case selName sel of
-        "" -> gtabulateRowLabels (Proxy :: Proxy f)
-        fieldName -> formatLabel fieldName
-      where
-        sel = (undefined :: t s f a)
+    gtabulateRowLabels _ = gtabulateRowLabels (Proxy :: Proxy f)
+
+instance
+  ( GTabulate f rep
+  , FormatMeta (MetaSel (Just n) su ss ds) rep
+  )
+  => GTabulate (S1 (MetaSel (Just n) su ss ds) f) rep
+  where
+    gtabulateRow = gtabulateRow . unM1
+    gtabulateRowLabels _ = [formatMeta (Proxy :: Proxy (MetaSel (Just n) su ss ds))]
 
 -- | A constructor inside of a larger type
 --
@@ -175,8 +179,6 @@ instance
 -- @
 instance
   ( GTabulate f rep
-  , Constructor c
-  , Tabulate String rep
   )
   => GTabulate (C1 c f) rep
   where
